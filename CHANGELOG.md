@@ -4,6 +4,7 @@
 
 - Adopt the MIT license and include license notices in the app bundle.
 - Support building with pre-macOS 26 SDKs by using the existing native material appearance; builds with newer SDKs retain Liquid Glass on supported systems.
+- Split the workspace view expression so older Swift compilers can type-check it without timing out.
 
 ## 0.8.0 — 2026-10-04
 

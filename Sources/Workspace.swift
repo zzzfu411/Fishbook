@@ -169,7 +169,7 @@ struct Workspace: View {
         } message: { Text(store.error ?? "") }
     }
 
-    var body: some View {
+    private var workspaceLifecycle: some View {
         workspacePresentation
         .onAppear {
             appearance.apply()
@@ -201,6 +201,10 @@ struct Workspace: View {
         }
         .onChange(of: appearanceName) { _, _ in appearance.apply() }
         .onChange(of: pdfColorName) { _, _ in pdf.setColorPreset(pdfColor) }
+    }
+
+    private var workspaceUpdates: some View {
+        workspaceLifecycle
         .onChange(of: store.guideRequest) { _, _ in
             setMode("explanation")
             if let paper = store.paper { documents.selectInteractiveGuide(for: paper) }
@@ -219,6 +223,10 @@ struct Workspace: View {
             pdfQuery = ""; showSearch = false; showPageJump = false; showInfo = false; showPDFAnnotations = false; showContents = false
             if let id { features.recordOpened(id) }
         }
+    }
+
+    private var workspaceCommands: some View {
+        workspaceUpdates
         .onReceive(NotificationCenter.default.publisher(for: ReaderAction.importPDF)) { _ in importPDF() }
         .onReceive(NotificationCenter.default.publisher(for: ReaderAction.find)) { _ in findCurrentPane() }
         .onReceive(NotificationCenter.default.publisher(for: ReaderAction.materials)) { _ in openMaterials() }
@@ -232,6 +240,10 @@ struct Workspace: View {
         .onReceive(NotificationCenter.default.publisher(for: ReaderAction.companionMode)) { _ in
             revealCompanion()
         }
+    }
+
+    var body: some View {
+        workspaceCommands
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.willEnterFullScreenNotification)) { value in
             if let source = value.object as? NSWindow, source === window.window { pdf.preservePositionForLayoutChange() }
         }
