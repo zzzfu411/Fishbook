@@ -10,6 +10,8 @@ zsh build.sh
 
 输出 `build/Fishbook.app`，目标为 Apple Silicon / macOS 14。脚本先在临时目录编译、复制资源和签名，检查成功后才替换成品；上一份应用移到 `build/previous/`。
 
+脚本按所选 SDK 检测 Liquid Glass API：macOS 26 及更新 SDK 启用该编译分支，运行时再检查系统版本；较旧 SDK 使用已有的原生材质样式。
+
 公开仓库只提供空文献目录与离线渲染资源。维护者本机如果存在未纳入 Git 的 `content/library.json`，普通构建会使用本地材料；**对外发布始终执行**：
 
 ```sh

@@ -14,7 +14,14 @@ STUDY_STAGING="$(mktemp -d "$STUDY_BUILD/.bundle-XXXXXX")"
 STUDY_NEXT="$STUDY_STAGING/Fishbook.app"
 trap 'rm -rf -- "$STUDY_STAGING"' EXIT
 mkdir -p "$STUDY_NEXT/Contents/MacOS" "$STUDY_NEXT/Contents/Resources"
+STUDY_SDK="$(/usr/bin/xcrun --sdk macosx --show-sdk-path)"
+STUDY_SDK_VERSION="$(/usr/bin/xcrun --sdk macosx --show-sdk-version)"
+STUDY_SWIFT_FLAGS=()
+if (( ${STUDY_SDK_VERSION%%.*} >= 26 )); then
+  STUDY_SWIFT_FLAGS+=(-D FISHBOOK_GLASS_EFFECT)
+fi
 /usr/bin/swiftc -swift-version 5 -O -parse-as-library \
+  -sdk "$STUDY_SDK" "${STUDY_SWIFT_FLAGS[@]}" \
   -module-cache-path "$STUDY_BUILD/ModuleCache" \
   -target arm64-apple-macos14.0 \
   "$STUDY_ROOT"/Sources/*.swift \
@@ -28,6 +35,8 @@ else
 fi
 cp "$STUDY_ROOT/Assets/Brand/Logo.png" "$STUDY_NEXT/Contents/Resources/Logo.png"
 cp "$STUDY_ROOT/Assets/Brand/AppIcon.icns" "$STUDY_NEXT/Contents/Resources/AppIcon.icns"
+cp "$STUDY_ROOT/LICENSE" "$STUDY_NEXT/Contents/Resources/LICENSE"
+cp "$STUDY_ROOT/THIRD_PARTY_NOTICES.md" "$STUDY_NEXT/Contents/Resources/THIRD_PARTY_NOTICES.md"
 /usr/bin/plutil -lint "$STUDY_NEXT/Contents/Info.plist"
 /usr/bin/codesign --force --deep --sign - "$STUDY_NEXT"
 /usr/bin/codesign --verify --deep --strict "$STUDY_NEXT"

@@ -122,13 +122,23 @@ private struct ReaderCapsuleSurface:ViewModifier {
         if reduceTransparency {
             content.background(StudyTheme.surface,in:Capsule())
                 .overlay(Capsule().strokeBorder(StudyTheme.line,lineWidth:0.5).allowsHitTesting(false))
-        } else if #available(macOS 26.0,*) {
-            content.glassEffect(.regular,in:Capsule())
         } else {
-            content.background(.thinMaterial,in:Capsule())
-                .overlay(Capsule().strokeBorder(StudyTheme.line.opacity(0.75),lineWidth:0.5).allowsHitTesting(false))
-                .shadow(color:.black.opacity(0.035),radius:3,y:1)
+            material(content)
         }
+    }
+    @ViewBuilder private func material(_ content: Content) -> some View {
+        // Runtime availability alone cannot make an older SDK parse this API.
+        #if FISHBOOK_GLASS_EFFECT
+        if #available(macOS 26.0, *) { content.glassEffect(.regular, in: Capsule()) }
+        else { fallback(content) }
+        #else
+        fallback(content)
+        #endif
+    }
+    private func fallback(_ content: Content) -> some View {
+        content.background(.thinMaterial, in: Capsule())
+            .overlay(Capsule().strokeBorder(StudyTheme.line.opacity(0.75), lineWidth: 0.5).allowsHitTesting(false))
+            .shadow(color: .black.opacity(0.035), radius: 3, y: 1)
     }
 }
 

@@ -64,6 +64,6 @@ zsh tools/check.sh --gui    # 另检查 PDFKit 与 WebKit；需要 macOS 图形�
 
 当前没有云同步、OCR、手绘、签名或页面重排。PDF 大纲取自原文件；原文件自带批注可查看和定位，暂不直接编辑。第三方组件及许可证见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
-项目代码暂未指定开源许可证。
+项目采用 [MIT 许可证](LICENSE)。
 
 欢迎通过 [Issues](https://github.com/zzzfu411/Fishbook/issues) 提交问题和建议，代码贡献请先阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
