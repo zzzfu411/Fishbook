@@ -44,6 +44,7 @@ struct Workspace: View {
     @AppStorage("ReaderPDFColor") private var pdfColorName = "original"
     @AppStorage("ReaderPDFMarkupTools") private var showPDFMarkup = false
     @AppStorage("ReaderPDFMarkupColor") private var markupColorName = "yellow"
+    @AppStorage("ReaderImmersiveToolbarPinned") private var immersiveToolbarPinned = false
     @Environment(\.undoManager) private var undo
     @FocusState private var searchFocused: Bool
     private var appearance: ReaderAppearance { ReaderAppearance(rawValue: appearanceName) ?? .system }
@@ -104,6 +105,7 @@ struct Workspace: View {
         .tint(StudyTheme.accent).preferredColorScheme(appearance.scheme)
         .background(ReaderWindowAccessor(controller: window).frame(width: 0, height: 0))
         .toolbar(immersive.isActive ? .hidden : .visible, for: .windowToolbar)
+        .ignoresSafeArea(.container, edges: immersive.isActive ? .top : [])
         .toolbar {
             ToolbarItemGroup {
                 Button { showInfo.toggle() } label: { Label("论文信息", systemImage: "info.circle") }
@@ -503,6 +505,7 @@ struct Workspace: View {
             previousActivePane = activePane
             showQuestions = false; showInfo = false; showContents = false
             showPageJump = false; showReadingOptions = false; showPDFColors = false; showPDFAnnotations = false
+            showSearch = false; pdfQuery = ""; pdf.find("")
             immersive.begin(windowIsFullScreen: window.intendedFullScreen)
             activePane = "original"
             window.setFullScreen(true)
@@ -534,6 +537,17 @@ struct Workspace: View {
     }
 
     private func originalPane(_ paper: Paper) -> some View {
+        ImmersiveReaderSurface(immersive: immersive.isActive, pinned: immersiveToolbarPinned,
+            interacting: showSearch || showContents || showPageJump || showPDFColors || showPDFAnnotations || showPDFComposer) {
+            ZStack {
+                PDFReader(paper: paper, store: store, controller: pdf)
+                if let error = pdf.loadError { ContentUnavailableView("原文暂不可用", systemImage: "doc.questionmark", description: Text(error)) }
+            }
+        } chrome: {
+            originalChrome(paper)
+        }
+    }
+    private func originalChrome(_ paper: Paper) -> some View {
         VStack(spacing: 0) {
             originalToolbar(paper)
             ReadingRule()
@@ -563,17 +577,13 @@ struct Workspace: View {
                     }
                     .onExitCommand { showSearch = false; pdfQuery = ""; pdf.find("") }
             }
-            ZStack {
-                PDFReader(paper: paper, store: store, controller: pdf)
-                if let error = pdf.loadError { ContentUnavailableView("原文暂不可用", systemImage: "doc.questionmark", description: Text(error)) }
-            }
         }
     }
     private func originalToolbar(_ paper: Paper) -> some View {
         GeometryReader { geometry in
             if geometry.size.width >= 550 { widePDFToolbar(paper) }
             else { compactPDFToolbar(paper) }
-        }.frame(height: 52).foregroundStyle(StudyTheme.text).background { ReaderChromeBackground() }
+        }.frame(height: immersive.isActive ? 44 : 52).foregroundStyle(StudyTheme.text).background { ReaderChromeBackground() }
     }
     private func widePDFToolbar(_ paper: Paper) -> some View {
         HStack(spacing: 8) {
@@ -584,7 +594,6 @@ struct Workspace: View {
                             .padding(.horizontal, 9).frame(height: 30)
                     }.buttonStyle(ReaderChromeButtonStyle()).help("退出沉浸阅读 Esc 或 ⇧⌘F")
                         .accessibilityLabel("退出沉浸阅读")
-                    Text("Esc").font(.system(size: 11)).foregroundStyle(StudyTheme.muted).accessibilityHidden(true)
                 }
                 Button { showContents.toggle() } label: { Image(systemName: "list.bullet").frame(width: 26, height: 30) }
                     .buttonStyle(ReaderChromeButtonStyle(selected: showContents)).help("目录、缩略图与书签").accessibilityLabel("原文目录与书签")
@@ -614,7 +623,8 @@ struct Workspace: View {
                 ReaderControlGroup {
                     HStack(spacing: 2) {
                         Button {
-                            pdf.preservePositionForLayoutChange(); showPDFMarkup.toggle()
+                            if !immersive.isActive { pdf.preservePositionForLayoutChange() }
+                            showPDFMarkup.toggle()
                         } label: {
                             Image(systemName: "pencil.tip.crop.circle").font(.system(size: 13)).frame(width: 30, height: 30)
                         }.buttonStyle(ReaderChromeButtonStyle(selected: showPDFMarkup))
@@ -636,6 +646,7 @@ struct Workspace: View {
                             .menuStyle(.borderlessButton).menuIndicator(.hidden).frame(width: 30).help("原文缩放").accessibilityLabel("原文缩放")
                     }
                 }
+                if immersive.isActive { immersivePinButton }
             }.padding(.horizontal, 14).frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     private func compactPDFToolbar(_ paper: Paper) -> some View {
@@ -650,7 +661,10 @@ struct Workspace: View {
             }.buttonStyle(ReaderChromeButtonStyle()).accessibilityLabel("第 \(pdf.pageNumber) 页，共 \(paper.pages) 页；跳转页码")
                 .popover(isPresented: $showPageJump) { pageJump(paper) }
             Spacer(minLength: 0)
-            Button { pdf.preservePositionForLayoutChange(); showPDFMarkup.toggle() } label: {
+            Button {
+                if !immersive.isActive { pdf.preservePositionForLayoutChange() }
+                showPDFMarkup.toggle()
+            } label: {
                 Image(systemName: "pencil.tip.crop.circle").frame(width: 30, height: 30)
             }.buttonStyle(ReaderChromeButtonStyle(selected: showPDFMarkup)).accessibilityLabel("PDF 标记工具")
                 .accessibilityValue(showPDFMarkup ? "已展开" : "已收起").help("显示或收起标记工具")
@@ -673,7 +687,15 @@ struct Workspace: View {
             } label: { Image(systemName: "ellipsis").frame(width: 26, height: 30) }
                 .menuStyle(.borderlessButton).menuIndicator(.hidden).frame(width: 26).accessibilityLabel("更多 PDF 阅读工具")
                 .popover(isPresented: $showPDFColors) { pdfColorOptions }
+            if immersive.isActive { immersivePinButton }
         }.padding(.horizontal, 12).frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    private var immersivePinButton: some View {
+        Button { immersiveToolbarPinned.toggle() } label: {
+            Image(systemName: immersiveToolbarPinned ? "pin.fill" : "pin").frame(width: 30, height: 30)
+        }.buttonStyle(ReaderChromeButtonStyle(selected: immersiveToolbarPinned))
+            .accessibilityLabel("固定沉浸工具栏").accessibilityValue(immersiveToolbarPinned ? "已固定" : "自动隐藏")
+            .help(immersiveToolbarPinned ? "取消固定，移开鼠标后隐藏 ⌥⌘T" : "固定沉浸工具栏 ⌥⌘T")
     }
     private func companionPane(_ paper: Paper) -> some View {
         VStack(spacing: 0) {

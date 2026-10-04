@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.4 — 2026-10-05
+
+- Hide reading and markup controls by default in immersive mode; move to the top edge to reveal a compact floating toolbar without shifting the PDF.
+- Keep controls available during search, popovers and native menus. Pin the toolbar with ⌥⌘T or the pin button; VoiceOver keeps it visible.
+
 ## 0.8.3 — 2026-10-05
 
 - Keep papers in library order when opening them in All Papers, the reading queue and other regular filters.

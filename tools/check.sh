@@ -47,6 +47,8 @@ build/markdown-smoke "$CHECK_RESOURCES"
 node Tests/ReaderLifecycle.js
 swiftc -swift-version 5 -parse-as-library -module-cache-path build/ModuleCache Sources/ReaderWindow.swift Tests/ImmersiveReading.swift -o build/immersive-reading
 build/immersive-reading
+swiftc -swift-version 5 -parse-as-library -module-cache-path build/ModuleCache Sources/Theme.swift Sources/ImmersiveToolbar.swift Tests/ImmersiveToolbarChecks.swift -o build/immersive-toolbar
+build/immersive-toolbar
 if [[ "$CHECK_PDF" == 1 ]]; then
   swiftc -swift-version 5 -parse-as-library -module-cache-path build/ModuleCache "${CORE[@]}" Sources/PDFAnnotations.swift Tests/PDFAnnotationChecks.swift -o build/pdf-annotations
   build/pdf-annotations

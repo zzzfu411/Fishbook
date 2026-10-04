@@ -78,6 +78,7 @@ enum ReaderAction {
 @MainActor private struct ReaderCommands: Commands {
     @ObservedObject var store: StudyStore
     @ObservedObject var documents: DocumentStore
+    @AppStorage("ReaderImmersiveToolbarPinned") private var immersiveToolbarPinned = false
 
     var body: some Commands {
         CommandMenu("阅读") {
@@ -90,6 +91,7 @@ enum ReaderAction {
             Button("自己讲一遍") { send(ReaderAction.reflection) }.keyboardShortcut("r",modifiers:[.command,.shift]).disabled(store.paper == nil)
             Divider()
             Button("切换沉浸阅读") { send(ReaderAction.immersive) }.keyboardShortcut("f",modifiers:[.command,.shift]).disabled(store.paper == nil)
+            Toggle("固定沉浸工具栏", isOn: $immersiveToolbarPinned).keyboardShortcut("t", modifiers: [.command, .option])
             Button("显示或隐藏文献栏") { send(ReaderAction.toggleLibrary) }.keyboardShortcut("b",modifiers:.command)
             Button("显示或隐藏笔记栏") { send(ReaderAction.toggleCompanion) }.keyboardShortcut("b",modifiers:[.command,.shift]).disabled(store.paper == nil)
             Divider()
