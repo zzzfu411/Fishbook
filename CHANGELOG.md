@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.3 — 2026-10-05
+
+- Keep papers in library order when opening them in All Papers, the reading queue and other regular filters.
+- Sort by activity time only in Recently Read and Recently Removed, with library order preserved for ties.
+
 ## 0.8.2 — 2026-10-05
 
 - Use ⌘B to toggle the library sidebar and ⇧⌘B to toggle the companion pane.

@@ -48,7 +48,7 @@ struct LibrarySidebar: View {
     }
     private var filtered: [Paper] {
         let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        return store.papers.filter { paper in
+        let papers = store.papers.filter { paper in
             let entry = features.entry(for: paper.id)
             if filter == "trash" { if !entry.removed { return false } }
             else if entry.removed { return false }
@@ -66,13 +66,15 @@ struct LibrarySidebar: View {
             }
             let display = features.displayPaper(paper)
             return matchesFilter && (term.isEmpty || (display.name + " " + display.title + " " + display.area).localizedCaseInsensitiveContains(term))
-        }.sorted { lhs, rhs in
-            let left = features.entry(for: lhs.id), right = features.entry(for: rhs.id)
+        }
+        guard filter == "recent" || filter == "trash" else { return papers }
+        return papers.enumerated().sorted { lhs, rhs in
+            let left = features.entry(for: lhs.element.id), right = features.entry(for: rhs.element.id)
             let date1 = (filter == "trash" ? left.removedAt : left.lastOpened) ?? .distantPast
             let date2 = (filter == "trash" ? right.removedAt : right.lastOpened) ?? .distantPast
             if date1 != date2 { return date1 > date2 }
-            return (store.papers.firstIndex(where: { $0.id == lhs.id }) ?? 0) < (store.papers.firstIndex(where: { $0.id == rhs.id }) ?? 0)
-        }
+            return lhs.offset < rhs.offset
+        }.map(\.element)
     }
     var body: some View {
         VStack(spacing: 0) {
