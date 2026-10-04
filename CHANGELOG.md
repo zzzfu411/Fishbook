@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.2 — 2026-10-05
+
+- Use ⌘B to toggle the library sidebar and ⇧⌘B to toggle the companion pane.
+- Update toolbar hints, the welcome screen and the shortcut reference to match.
+
 ## 0.8.1 — 2026-10-04
 
 - Adopt the MIT license and include license notices in the app bundle.

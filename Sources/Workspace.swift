@@ -119,7 +119,7 @@ struct Workspace: View {
                 } label: { Label("阅读布局", systemImage: effectiveLayout == "split" ? "rectangle.split.2x1" : "rectangle") }
                     .help("专注阅读与复述").disabled(store.paper == nil)
                 Button(action: toggleCompanion) { Label(companionVisible ? "收起笔记栏" : "展开笔记栏", systemImage: "sidebar.right") }
-                    .help("\(companionVisible ? "收起" : "展开")笔记栏 ⌥⌘N").disabled(store.paper == nil || showQuestions)
+                    .help("\(companionVisible ? "收起" : "展开")笔记栏 ⇧⌘B").disabled(store.paper == nil || showQuestions)
                 Button { addNote("高亮") } label: { Label("高亮", systemImage: "highlighter") }
                     .keyboardShortcut("h", modifiers: [.command, .shift]).help("高亮原文选中文字 ⇧⌘H").disabled(!canRecord || activePane == "companion")
                 Button { addNote("疑问") } label: { Label("疑问", systemImage: "questionmark.bubble") }
@@ -688,7 +688,7 @@ struct Workspace: View {
                     .popover(isPresented: $showReadingOptions, arrowEdge: .bottom) { readingOptions }
                 }
                 ReaderIconButton("收起笔记栏", symbol: "sidebar.right", action: toggleCompanion)
-                    .help("收起笔记栏 ⌥⌘N")
+                    .help("收起笔记栏 ⇧⌘B")
             }.controlSize(.small).padding(.horizontal, 14).frame(height: 52).background { ReaderChromeBackground() }
             ReadingRule()
             if editNote == nil, !features.drafts(for: paper.id).isEmpty {
@@ -852,7 +852,7 @@ struct Workspace: View {
                 Label("选中文字，点“疑问”或“笔记”", systemImage: "square.and.pencil")
                 Label("下次打开，继续上次的阅读位置", systemImage: "bookmark")
             }.font(.system(size: 14))
-            Text("⌘O 导入    ⌘F 查找    ⌘1 / 2 / 3 切换辅助\n⇧⌘F 沉浸阅读    Esc 退出\n⌥⌘S 文献栏    ⌥⌘N 笔记栏")
+            Text("⌘O 导入    ⌘F 查找    ⌘1 / 2 / 3 切换辅助\n⇧⌘F 沉浸阅读    Esc 退出\n⌘B 文献栏    ⇧⌘B 笔记栏")
                 .font(.system(size: 11)).foregroundStyle(StudyTheme.muted).lineSpacing(6)
             Text("个人记录保存在本机固定资料库。⌘, 打开备份与恢复；从“我的记录”按范围导出。")
                 .font(.caption).foregroundStyle(StudyTheme.muted).fixedSize(horizontal: false, vertical: true)
