@@ -31,6 +31,7 @@ zsh build.sh --public
 | `Models.swift`、`LibraryStorage.swift` | 核心记录、PDF 导入、持久化、备份和恢复 |
 | `Documents.swift`、`MarkdownView.swift` | 材料修订、本地资源与中文阅读器 |
 | `LibraryFeatures.swift` | 队列、草稿、书签、复述与范围导出 |
+| `CitationGraph.swift`、`CitationGraphPane.swift` | OpenAlex 引文查询、有界缓存、引用方向与可展开路线图 |
 | `Tests/` | 临时资料库、故障路径和原生阅读器检查 |
 
 ## 检查
@@ -56,6 +57,8 @@ zsh tools/check.sh --public --gui
 - 写入成功后才更新已提交状态及撤销记录；失败时保留用户输入。
 - 中文材料更新产生新修订，已有笔记继续指向原修订。
 - PDF 配色只影响显示；导出从原始字节生成副本。
+- 引文查询只在用户打开路线图或展开节点时发起，使用临时 URLSession，不上传正文与学习记录。`cited_by:<ID>` 查询参考文献，`cites:<ID>` 查询引用者；服务端 cursor 分页，不从年份或相似度推断引文边。
+- 引文缓存位于 `~/Library/Caches/<bundle-id>/CitationGraph-v1/`，七天内复用，三十天内可作离线回退；限制为 12 MiB / 160 个响应。测试注入临时缓存和 URLProtocol，不依赖线上服务；`build/citation-graph --live` 可另做一次真实接口检查。
 
 ## 发布
 

@@ -49,6 +49,8 @@ swiftc -swift-version 5 -parse-as-library -module-cache-path build/ModuleCache S
 build/immersive-reading
 swiftc -swift-version 5 -parse-as-library -module-cache-path build/ModuleCache Sources/Theme.swift Sources/ImmersiveToolbar.swift Tests/ImmersiveToolbarChecks.swift -o build/immersive-toolbar
 build/immersive-toolbar
+swiftc -swift-version 5 -parse-as-library -module-cache-path build/ModuleCache Sources/CitationGraph.swift Tests/CitationGraphChecks.swift -o build/citation-graph
+build/citation-graph
 if [[ "$CHECK_PDF" == 1 ]]; then
   swiftc -swift-version 5 -parse-as-library -module-cache-path build/ModuleCache "${CORE[@]}" Sources/PDFAnnotations.swift Tests/PDFAnnotationChecks.swift -o build/pdf-annotations
   build/pdf-annotations

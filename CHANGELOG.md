@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.0 — 2026-10-06
+
+- Explore references and citing papers inside Fishbook with an OpenAlex citation map (⇧⌘G), expandable nodes, back navigation and paginated lists.
+- Choose between matching publication versions and open papers already in the local library. Show source, retrieval date and missing-coverage states.
+- Cache citation queries with a 12 MiB / 160-response bound and offline fallback. PDF files and personal notes stay on the Mac.
+
 ## 0.8.4 — 2026-10-05
 
 - Hide reading and markup controls by default in immersive mode; move to the top edge to reveal a compact floating toolbar without shifting the PDF.

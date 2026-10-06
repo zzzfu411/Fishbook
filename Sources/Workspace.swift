@@ -34,6 +34,7 @@ struct Workspace: View {
     @StoredState<Bool> private var showSettings = false
     @StoredState<Bool> private var showQuestions = false
     @StoredState<Bool> private var showReflection = false
+    @StoredState<Bool> private var showCitations = false
     @StoredState<Bool> private var editPaperInfo = false
     @StoredState<Bool> private var showContents = false
     @StoredState<String> private var activePane = "original"
@@ -111,6 +112,8 @@ struct Workspace: View {
                 Button { showInfo.toggle() } label: { Label("论文信息", systemImage: "info.circle") }
                     .disabled(store.paper == nil).help("论文信息与阅读状态")
                     .popover(isPresented: $showInfo) { if let paper = store.paper { paperInfo(paper) } }
+                Button(action: openCitations) { Label("引用路线图", systemImage: "point.3.connected.trianglepath.dotted") }
+                    .disabled(store.paper == nil).help("查看引用和被引论文 ⇧⌘G")
                 Menu {
                     Button("对照阅读") { changeLayout("split") }
                     Button("只看原文") { changeLayout("original") }
@@ -152,6 +155,12 @@ struct Workspace: View {
         }
         .sheet(isPresented: $showMaterials) { MaterialsPane(store: store, documents: documents) }
         .sheet(isPresented: $showSettings) { LibrarySettingsPane(session: session) }
+        .sheet(isPresented: $showCitations) {
+            if let paper = displayPaper {
+                CitationGraphPane(paper: paper, library: store.papers.filter { !features.entry(for: $0.id).removed }.map { features.displayPaper($0) },
+                    openPaper: selectPaper).id(paper.id)
+            }
+        }
         .sheet(isPresented: $editPaperInfo) { if let paper = store.paper { PaperInfoEditor(paper: paper, features: features, close: { editPaperInfo = false }) } }
         .sheet(isPresented: $showReflection) {
             if let paper = displayPaper {
@@ -235,6 +244,7 @@ struct Workspace: View {
         .onReceive(NotificationCenter.default.publisher(for: ReaderAction.settings)) { _ in openSettings() }
         .onReceive(NotificationCenter.default.publisher(for: ReaderAction.questions)) { _ in openQuestions() }
         .onReceive(NotificationCenter.default.publisher(for: ReaderAction.reflection)) { _ in openReflection() }
+        .onReceive(NotificationCenter.default.publisher(for: ReaderAction.citations)) { _ in openCitations() }
         .onReceive(NotificationCenter.default.publisher(for: ReaderAction.layout)) { value in if let layout = value.object as? String { changeLayout(layout) } }
         .onReceive(NotificationCenter.default.publisher(for: ReaderAction.immersive)) { _ in toggleImmersive() }
         .onReceive(NotificationCenter.default.publisher(for: ReaderAction.toggleLibrary)) { _ in toggleLibrary() }
@@ -455,6 +465,10 @@ struct Workspace: View {
         }
         showReflection = true
     }
+    private func openCitations() {
+        guard store.paper != nil, preserveDraft() else { return }
+        showInfo = false; showCitations = true
+    }
     private func changeLayout(_ value: String) {
         guard ["split", "original", "companion"].contains(value), preserveDraft() else { return }
         preserveReadingPosition {
@@ -522,7 +536,7 @@ struct Workspace: View {
         if showPDFAnnotations { showPDFAnnotations = false; return true }
         guard immersive.isActive else { return false }
         // Popovers and sheets get their usual Escape behavior first.
-        if showContents || showPageJump || showReadingOptions || showPDFColors || showPDFComposer || showInfo || welcome || showMaterials || showSettings || showReflection || editPaperInfo || showImportResults || store.error != nil { return false }
+        if showContents || showPageJump || showReadingOptions || showPDFColors || showPDFComposer || showInfo || welcome || showMaterials || showSettings || showReflection || showCitations || editPaperInfo || showImportResults || store.error != nil { return false }
         if showSearch {
             showSearch = false; pdfQuery = ""; pdf.find("")
         } else {
@@ -646,7 +660,10 @@ struct Workspace: View {
                             .menuStyle(.borderlessButton).menuIndicator(.hidden).frame(width: 30).help("原文缩放").accessibilityLabel("原文缩放")
                     }
                 }
-                if immersive.isActive { immersivePinButton }
+                if immersive.isActive {
+                    ReaderIconButton("引用路线图", symbol: "point.3.connected.trianglepath.dotted", action: openCitations).help("引用路线图 ⇧⌘G")
+                    immersivePinButton
+                }
             }.padding(.horizontal, 14).frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     private func compactPDFToolbar(_ paper: Paper) -> some View {
@@ -679,6 +696,7 @@ struct Workspace: View {
                 Button("前进到下一个位置") { pdf.goForward() }.disabled(!pdf.canForward)
                 Divider()
                 Button("PDF 配色…") { showPDFColors = true }
+                Button("引用路线图…", action: openCitations)
                 Button("放大原文") { pdf.view.zoomIn(nil) }
                 Button("缩小原文") { pdf.view.zoomOut(nil) }
                 Button("适合页面") { pdf.view.autoScales = true }
@@ -844,6 +862,7 @@ struct Workspace: View {
                 Button(features.entry(for: paper.id).queued ? "移出待读" : "加入待读") { features.setQueued(paper.id, !features.entry(for: paper.id).queued) }.buttonStyle(.link)
             }
             Button("在访达中显示 PDF") { NSWorkspace.shared.activateFileViewerSelecting([store.fileURL(paper)]) }.buttonStyle(.link)
+            Button("引用路线图…", action: openCitations).buttonStyle(.link)
         }.padding(22).frame(width: 340)
     }
     @ViewBuilder private var feedback: some View {
