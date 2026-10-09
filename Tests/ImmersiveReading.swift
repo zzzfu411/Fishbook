@@ -39,10 +39,58 @@ import AppKit
         // fullscreen animation is running in this harness.
         try await Task.sleep(nanoseconds: 10_000_000)
     }
+
+    @MainActor private static func checkFullScreenShortcut() {
+        let previousMenu = NSApp.mainMenu
+        let main = NSMenu(title: "Test"), view = NSMenu(title: "View")
+        main.autoenablesItems = false; view.autoenablesItems = false
+        let root = NSMenuItem(title: "View", action: nil, keyEquivalent: "")
+        root.submenu = view; main.addItem(root)
+        NSApp.mainMenu = main
+        let reader = window(), controller = ReaderWindowController()
+        defer { controller.attach(nil); NSApp.mainMenu = previousMenu; reader.close() }
+
+        let find = NSMenuItem(title: "Find", action: nil, keyEquivalent: "f")
+        let immersive = NSMenuItem(title: "Immersive", action: nil, keyEquivalent: "F")
+        immersive.keyEquivalentModifierMask = [.command, .shift]
+        view.addItem(find); view.addItem(immersive)
+        let fullScreen = NSMenuItem(title: "进入全屏", action: #selector(NSWindow.toggleFullScreen(_:)), keyEquivalent: "")
+        fullScreen.target = reader
+        view.addItem(fullScreen)
+        controller.attach(reader)
+        let modifiers: NSEvent.ModifierFlags = [.control, .command]
+        precondition(fullScreen.keyEquivalent == "f" && fullScreen.keyEquivalentModifierMask == modifiers)
+        precondition(fullScreen.target === reader && fullScreen.title == "进入全屏", "preserve the native target and localized title")
+        precondition(find.keyEquivalentModifierMask == .command && immersive.keyEquivalentModifierMask == [.command, .shift],
+                     "Find and immersive reading keep their own shortcuts")
+
+        let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: modifiers,
+            timestamp: 0, windowNumber: reader.windowNumber, context: nil, characters: "f",
+            charactersIgnoringModifiers: "f", isARepeat: false, keyCode: 3)!
+        precondition(main.performKeyEquivalent(with: event) && reader.toggleCount == 1,
+                     "Control-Command-F dispatches the native full-screen action exactly once")
+        fullScreen.title = "Exit Full Screen"
+        fullScreen.keyEquivalentModifierMask = [.function]
+        precondition(fullScreen.keyEquivalentModifierMask == modifiers, "retain the shortcut when AppKit updates the menu")
+
+        view.removeItem(fullScreen)
+        let replacement = NSMenuItem(title: "Vollbildmodus", action: #selector(NSWindow.toggleFullScreen(_:)), keyEquivalent: "")
+        replacement.target = reader
+        view.addItem(replacement)
+        precondition(replacement.keyEquivalent == "f" && replacement.keyEquivalentModifierMask == modifiers,
+                     "late and rebuilt menus receive the shortcut without matching an English title")
+        precondition(main.performKeyEquivalent(with: event) && reader.toggleCount == 2,
+                     "a rebuilt menu still dispatches only one native toggle")
+        controller.attach(nil)
+        replacement.keyEquivalentModifierMask = [.option]
+        precondition(replacement.keyEquivalentModifierMask == .option, "detached windows remove menu observers")
+        print("native full-screen shortcut, menu rebuilds and unrelated shortcuts verified")
+    }
     @MainActor static func main() async throws {
         setbuf(stdout, nil)
         _ = NSApplication.shared
         NSApp.setActivationPolicy(.prohibited)
+        checkFullScreenShortcut()
 
         // Leaving focus mode must restore the user's choice, including a Space
         // they had already entered before using Fishbook's focus command.

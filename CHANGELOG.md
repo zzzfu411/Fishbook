@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.1 — 2026-10-09
+
+- Bind Control–Command–F to the native Enter / Exit Full Screen command, retaining the shortcut when macOS updates or rebuilds the menu.
+- Keep window full screen separate from immersive reading (Shift–Command–F); native full-screen exit restores the layout preceding immersive mode.
+
 ## 0.9.0 — 2026-10-06
 
 - Explore references and citing papers inside Fishbook with an OpenAlex citation map (⇧⌘G), expandable nodes, back navigation and paginated lists.

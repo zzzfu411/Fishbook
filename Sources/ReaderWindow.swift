@@ -45,6 +45,7 @@ struct ImmersiveReadingSession {
     private var transitionGeneration = 0
     private var eventMonitor: Any?
     private var accessorID: ObjectIdentifier?
+    private var updatingFullScreenShortcut = false
     func attach(_ window: NSWindow?) {
         attach(window, accessorID: nil)
     }
@@ -75,6 +76,10 @@ struct ImmersiveReadingSession {
         center.addObserver(self, selector: #selector(willExitFullScreen), name: NSWindow.willExitFullScreenNotification, object: nextWindow)
         center.addObserver(self, selector: #selector(didExitFullScreen), name: NSWindow.didExitFullScreenNotification, object: nextWindow)
         center.addObserver(self, selector: #selector(windowWillClose), name: NSWindow.willCloseNotification, object: nextWindow)
+        for name in [NSMenu.didAddItemNotification, NSMenu.didChangeItemNotification, NSMenu.didBeginTrackingNotification] {
+            center.addObserver(self, selector: #selector(menuDidChange), name: name, object: nil)
+        }
+        updateFullScreenShortcut()
 
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self, let window = self.window,
@@ -85,6 +90,32 @@ struct ImmersiveReadingSession {
             return self.onEscape?() == true ? nil : event
         }
         fulfillLatestRequest()
+    }
+
+    @objc private func menuDidChange(_ notification: Notification) {
+        updateFullScreenShortcut()
+    }
+
+    private func updateFullScreenShortcut() {
+        guard !updatingFullScreenShortcut, let menu = NSApp.mainMenu else { return }
+        updatingFullScreenShortcut = true
+        defer { updatingFullScreenShortcut = false }
+
+        // AppKit supplies the localized title, target and full-screen validation.
+        // Bind its existing command, including when SwiftUI rebuilds the menu.
+        // Only changing the shortcut keeps native exit notifications (and the
+        // immersive layout restoration they trigger) on the same path.
+        func update(_ menu: NSMenu) {
+            for item in menu.items {
+                if item.action == #selector(NSWindow.toggleFullScreen(_:)) {
+                    if item.keyEquivalent != "f" { item.keyEquivalent = "f" }
+                    let modifiers: NSEvent.ModifierFlags = [.control, .command]
+                    if item.keyEquivalentModifierMask != modifiers { item.keyEquivalentModifierMask = modifiers }
+                }
+                if let submenu = item.submenu { update(submenu) }
+            }
+        }
+        update(menu)
     }
 
     fileprivate func detach(accessorID: ObjectIdentifier) {
